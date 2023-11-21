@@ -8,12 +8,14 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\Usuario;
 use App\Models\Administrador;
 use App\Models\Carrito;
 use App\Models\Contendido;
-use App\Mail\CambioPassMailable;
+use App\Mail\AceptoSubastaMailable;
+use App\Mail\RechazoSubastaMailable;
 
 
 
@@ -24,14 +26,61 @@ class UsuarioController extends Controller{
     //CRUD USUARIO
     */
 
+    private function compararObjetos($a, $b) {
+        $atributo = 'puja';
+    
+        if ($a->$atributo == $b->$atributo) {
+            return 0;
+        }
+        return ($a->$atributo < $b->$atributo) ? 1 : -1;
+    }
+
+    private function agrupar($array){
+        $atributo = 'id_subasta';
+        $grupos = [];
+        foreach ($array as $objeto) {
+            $numero = $objeto->$atributo;
+            if (!isset($grupos[$numero])) {
+                $grupos[$numero] = [];
+            }
+            $grupos[$numero][] = $objeto;
+        }
+        return $grupos;
+    }
+
     public function pruebaCorreo(){
-        $usuario=Usuario::where('email', 'user@gmail.com')->first();
-        //try {
-            Mail::to($usuario->email)->send(new CambioPassMailable($usuario));
-            return response()->json(["mensaje" => true]);
-        //} catch(\Exception $e){
-        //    return response()->json(['e' => $e], 400);
-        //}
+        $id_subasta;
+        $resultados = DB::table('subasta as S')
+        ->select('S.id_subasta', 'SD.puja', 'U.email')
+        ->join('subastador as SD', 'S.id_subasta', '=', 'SD.id_subasta')
+        ->join('usuario as U', 'SD.email', '=', 'U.email')
+        ->where('S.fecha_cierre', '<=', DB::raw('CURRENT_TIMESTAMP'))
+        ->where('abierto', true) 
+        ->get();
+        $groups=[];
+        $resultados = $this->agrupar($resultados);
+        foreach($resultados as $res){
+            usort($res,[$this, 'compararObjetos']);
+            $groups[]=$res;
+        }
+        foreach($groups as $result){
+            $acreditado = false;
+            foreach($result as $resultado){
+                $usuario = DB::table('usuario as U')->select('U.*')->where('email','=', $resultado->email)->first();
+                $id_subasta = $resultado->id_subasta;
+                if($usuario->cartera>=$resultado->puja && !$acreditado){
+                    $usuario->cartera =$usuario->cartera - $resultado->puja;
+                    $acreditado=true;
+                    Mail::to($resultado->email)->send(new AceptoSubastaMailable($usuario,$resultado));
+                }else{
+                    Mail::to($resultado->email)->send(new RechazoSubastaMailable($usuario,$resultado));
+                }
+            }
+            DB::table('subasta')
+            ->where('id_subasta', $id_subasta)
+            ->update(['abierto' => false]);
+        }
+        return response()->json(true);
     }
 
     public function login(Request $request){
@@ -112,6 +161,11 @@ class UsuarioController extends Controller{
             return response()->json(["mensaje" => true]);
         }
     
+    }
+
+    public function verCartera(Request $request){
+        $usuario = Auth::user();
+        return response()->json(["cartera" => $usuario->cartera]);
     }
 
     public function mostrarUsuario($email, Request $request){

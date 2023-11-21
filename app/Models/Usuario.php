@@ -29,16 +29,12 @@ class Usuario extends Authenticatable{
         'ciudad',
         'direccion',
         'tipo_usuario',
+        'cartera',
     ];
 
     protected $hidden = [
         'password',
     ];
-
-    /*
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];*/
 
     public function mostrarUsuario($email){
         $usuario = $this->where('email', '=', $email)->first();
@@ -54,6 +50,7 @@ class Usuario extends Authenticatable{
                 'ciudad' => $usuario->ciudad,
                 'direccion' => $usuario->direccion,
                 'tipo_usuario' => $usuario->tipo_usuario,
+                'cartera' => $usuario->cartera,
                 'articulos' => $articulos
             ];
             return $datosUsuario;

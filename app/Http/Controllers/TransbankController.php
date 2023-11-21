@@ -11,6 +11,7 @@ use Transbank\Webpay\WebpayPlus\Transaction;
 
 use App\Models\Compra;
 use App\Models\Carrito;
+use App\Models\Usuario;
 
 class TransbankController extends Controller{
 
@@ -23,6 +24,18 @@ class TransbankController extends Controller{
         }else{
             WebpayPlus::configureForTesting();
         }
+    }
+
+    public function iniciarDeposito(Request $request){
+        $usuario = Auth::user();
+        $compra = new Compra();
+        $compra->email_titular = $usuario->email;
+        $compra->total = $request->input('total'); 
+        $compra->id_sesion = '123456'; 
+        $compra->fecha_inicio = date("Y-m-d H:i:s"); 
+        $compra->save();
+        $url = self::start_transaction($compra);
+        return response()->json(["url"=>$url]);
     }
 
     public function iniciarCompra(Request $request){
@@ -54,15 +67,21 @@ class TransbankController extends Controller{
             $confirmacion = (new Transaction)->commit($request->get('token_ws'));
 
             $compra= Compra::where('id_compra',$confirmacion->buyOrder)->first();
-            $carrito= Carrito::where('id_carrito',$compra->id_carrito)->first();
 
             if($confirmacion->isApproved()){
                 $compra->status=1;
                 $compra->fecha_confirmacion = date("Y-m-d H:i:s"); 
                 $compra->update();
-                $carrito->en_uso = 0;
-                $carrito->update();
-                $new = Carrito::firstOrCreate(['en_uso' => 1],['email_carro' => $carrito->email_carro]);
+                if(!is_null($compra->id_carrito)){
+                    $carrito= Carrito::where('id_carrito',$compra->id_carrito)->first();
+                    $carrito->en_uso = 0;
+                    $carrito->update();
+                    $new = Carrito::firstOrCreate(['en_uso' => 1],['email_carro' => $carrito->email_carro]);
+                }else if(is_null($compra->id_carrito)){
+                    $usuario=Usuario::where('email',$compra->email_titular)->first();
+                    $usuario->cartera = $usuario->cartera + $compra->total;
+                    $usuario->update();
+                }
                 return redirect('http://localhost:4200/principal');
             }else{
                 return response()->json(["mensaje"=>"pago cancelado {$compra->id_compra}"]);

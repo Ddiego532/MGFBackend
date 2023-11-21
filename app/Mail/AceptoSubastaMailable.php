@@ -9,42 +9,35 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class CorreoMailable extends Mailable
+class AceptoSubastaMailable extends Mailable
 {
     use Queueable, SerializesModels;
+
+    public $usuario;
+    public $subasta;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($usuario,$subasta)
     {
-        //
+        $this->usuario = $usuario;
+        $this->subasta = $subasta;
+
     }
 
-    /**
-     * Get the message envelope.
-     *
-     * @return \Illuminate\Mail\Mailables\Envelope
-     */
-    public function envelope()
-    {
-        return new Envelope(
-            subject: 'Correo Mailable',
-        );
-    }
 
     /**
-     * Get the message content definition.
+     * Build the message.
      *
-     * @return \Illuminate\Mail\Mailables\Content
+     * @return $this
      */
-    public function content()
+    public function build()
     {
-        return new Content(
-            view: 'correo.email',
-        );
+        $nombre=$this->usuario->nombre." ".$this->usuario->apellido;
+        return $this->view('correo.aceptosubasta')->with(['email' => $this->usuario->email, 'nombre' => $nombre, 'nro' => $this->subasta->id_subasta, 'total' => $this->subasta->puja])->subject('Confirmación de Subasta');
     }
 
     /**

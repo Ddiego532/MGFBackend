@@ -22,6 +22,7 @@ Route::get('/mostrarArticulo/{id_articulo}', [TiendaController::class, 'mostrarA
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/actualizarUsuario',[UsuarioController::class,'actualizarUsuario']);
     Route::get('/mostrarPerfil', [UsuarioController::class, 'mostrarPerfil']);
+    Route::get('/verCartera',[UsuarioController::class,'verCartera']);
     Route::get('/mostrarCompras', [TiendaController::class, 'mostrarCompras']);
     Route::get('/eliminarUsuario',[UsuarioController::class,'eliminarUsuario']);
     Route::post('/crearArticulo',[TiendaController::class,'crearArticulo']);
@@ -32,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/agregarCarrito/{id_articulo}', [TiendaController::class, 'agregarCarrito'])->where('id_articulo', '.*');
     Route::get('/removerCarrito/{id_articulo}', [TiendaController::class, 'removerCarrito'])->where('id_articulo', '.*');
     Route::post('/iniciarCompra',[TransbankController::class,'iniciarCompra']);
+    Route::post('/iniciarDeposito',[TransbankController::class,'iniciarDeposito']);
 });
 
 

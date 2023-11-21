@@ -25,8 +25,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>Bienvenido a Nuestra Plataforma</h1>
-        <p>¡Gracias por unirte a nosotros! Esperamos que disfrutes de nuestra plataforma.</p>
+        <h1>¡Hola, {{$nombre}}!</h1>
+        <p>El motivo de este correo es dar aviso de su confirmación del pago de subasta.</p>
+        <p>A continuación, se detalla el monto y el Nro de la subasta.</p>
+        <p>Nro Subasta: {{$nro}}</p>
+        <p>Total: ${{$total}}</p>
+        <p>Atentamente,<br><strong>MyGreenFashion</strong></p>
+        <img src="{{ asset('images/maxlogo.png') }}" alt="Ejemplo de Imagen">
     </div>
 </body>
 </html>

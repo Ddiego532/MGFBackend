@@ -198,16 +198,17 @@ class TiendaController extends Controller{
     public function crearSubasta($id_articulo, Request $request){
         try{
             $articulo = Articulo::where('id_articulo', '=', $id_articulo)->first();
+            $precio = ($articulo->precio/2)+($articulo->precio*0.15);
             $subasta = Subasta::firstOrCreate(
                 ['id_articulo' => $id_articulo],
                 [
-                    'precio_venta' => $articulo->precio,
-                    'precio_inicial' => $articulo->precio,
+                    'precio_venta' => $precio,
+                    'precio_inicial' => $precio,
                     'fecha_apertura' => date('Y-m-d H:i:s'),
                     'fecha_cierre' => date('Y-m-d H:i:s', strtotime('+1 day')),
                 ]
             );
-            
+            $articulo->precio = $precio;
             $articulo->id_subasta = $subasta->id_subasta;
             $articulo->en_subasta = 1;
             $articulo->save();
@@ -247,8 +248,16 @@ class TiendaController extends Controller{
     
     }
 
-    public function mostrarSubasta($id_subasta, Request $request){
+    public function mostrarDueno($dueno, Request $request){
+        $usuario = Auth::user();
+        if($usuario->email==$dueno){
+            return response()->json(['dueno' => 1]);
+        }else{
+            return response()->json(['dueno' => 0]);
+        }
+    }
 
+    public function mostrarSubasta($id_subasta, Request $request){
         $subasta = Subasta::where('id_subasta', '=', $id_subasta)->first();
         if($subasta){
             $Subasta = $subasta->mostrarSubasta($subasta->id_subasta);
@@ -261,14 +270,21 @@ class TiendaController extends Controller{
 
     public function mostrarSubastas(Request $request){
 
-        $subastas = Subasta::all();
-        $Subastas = [];
+        $subastas = DB::table('subasta AS S')
+        ->join('articulo AS A', 'S.id_subasta', '=', 'A.id_subasta')
+        ->select('S.*', 'A.*')
+        ->orderBy('A.en_subasta', 'asc')
+        ->get();
 
-        foreach ($subastas as $subasta) {
+        return response()->json($subastas);
+    }
 
-            $Subastas[] = $subasta->mostrarSubasta($subasta->id_subasta);
-        }
-        return response()->json($Subastas);
+    public function cerrarSubasta($id_subasta ,Request $request){
+        $subasta = Subasta::where('id_subasta', '=', $id_subasta)->first();
+        $subasta->fecha_cierre = date('Y-m-d H:i:s');
+        $subasta->save();
+        $Subasta = $subasta->mostrarSubasta($subasta->id_subasta);
+        return response()->json($Subasta);
     }
 
     public function agregarSubastador(Request $request){

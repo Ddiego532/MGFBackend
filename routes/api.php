@@ -12,6 +12,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::get('/mostrarUsuarios',[UsuarioController::class,'mostrarUsuarios']);
 Route::get('/mostrarArticulos',[TiendaController::class,'mostrarArticulos']);
+Route::get('/mostrarSubastas',[TiendaController::class,'mostrarSubastas']);
 Route::post('/crearUsuario',[UsuarioController::class,'crearUsuario']);
 Route::post('/login',[UsuarioController::class,'login']);
 Route::get('/pruebaCorreo',[UsuarioController::class,'pruebaCorreo']);
@@ -21,6 +22,7 @@ Route::get('/mostrarArticulo/{id_articulo}', [TiendaController::class, 'mostrarA
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/actualizarUsuario',[UsuarioController::class,'actualizarUsuario']);
+    Route::get('/mostrarDueno/{dueno}', [TiendaController::class, 'mostrarDueno'])->where('dueno', '.*');
     Route::get('/mostrarPerfil', [UsuarioController::class, 'mostrarPerfil']);
     Route::get('/verCartera',[UsuarioController::class,'verCartera']);
     Route::get('/mostrarCompras', [TiendaController::class, 'mostrarCompras']);
@@ -28,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/crearArticulo',[TiendaController::class,'crearArticulo']);
     Route::get('/logout',[UsuarioController::class,'logout']);
     Route::get('/mostrarCarrito', [TiendaController::class, 'mostrarCarrito']);
+    Route::get('/cerrarSubasta/{id_subasta}', [TiendaController::class, 'cerrarSubasta'])->where('id_subasta', '.*');
     Route::get('/crearSubasta/{id_articulo}', [TiendaController::class, 'crearSubasta'])->where('id_articulo', '.*');
     Route::post('/agregarSubastador', [TiendaController::class, 'agregarSubastador']);
     Route::get('/agregarCarrito/{id_articulo}', [TiendaController::class, 'agregarCarrito'])->where('id_articulo', '.*');
